@@ -1,0 +1,16 @@
+[package]
+name = "adic"
+version = "0.1.0"
+edition = "2021"
+description = ""
+license = "Apache-2.0"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = "2"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

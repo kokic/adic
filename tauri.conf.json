@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "adic",
+  "version": "0.1.0",
+  "identifier": "io.github.kokic.adic",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "adic",
+        "create": false,
+        "width": 960,
+        "height": 640,
+        "alwaysOnTop": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": false,
+    "icon": ["icons/icon.ico", "icons/icon.png"]
+  }
+}
