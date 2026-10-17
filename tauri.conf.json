@@ -13,6 +13,7 @@
         "label": "main",
         "title": "adic",
         "create": false,
+        "decorations": false,
         "width": 960,
         "height": 640,
         "zoomHotkeysEnabled": true,

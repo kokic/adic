@@ -32,19 +32,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = tauri::Builder::default().build(tauri::generate_context!())?;
     let mut config = app.config().app.windows[0].clone();
     config.url = url;
-    if let Some(value) = decorations {
-        config.decorations = value;
-    }
+    config.decorations = decorations.unwrap_or(config.decorations);
 
     let content = WebviewWindowBuilder::from_config(&app, &config)?
         .visible(false)
         .build()?;
-    let drag = if config.decorations {
-        None
-    } else {
-        Some(drag::create(&content)?)
-    };
+    let drag = (!config.decorations)
+        .then(|| drag::create(&content))
+        .transpose()?;
 
-    let exit_code = platform::run(app, content, drag)?;
+    let exit_code = {
+        #[cfg(target_os = "macos")]
+        let _monitor = drag
+            .map(|drag| platform::listen(&content, drag))
+            .transpose()?;
+
+        #[cfg(windows)]
+        drag.map_or(Ok(()), |drag| platform::listen(content.as_ref(), &drag))?;
+
+        #[cfg(target_os = "linux")]
+        drag.map_or(Ok(()), |drag| platform::listen(&drag))?;
+
+        config.visible.then(|| content.show()).unwrap_or(Ok(()))?;
+        app.run_return(|_, _| {})
+    };
     std::process::exit(exit_code);
 }
