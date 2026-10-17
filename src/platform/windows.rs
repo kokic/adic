@@ -7,8 +7,9 @@ use webview2_com::{
         COREWEBVIEW2_PHYSICAL_KEY_STATUS as PhysicalKeyStatus,
     },
 };
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT, VK_X,
+use windows::Win32::UI::{
+    Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT, VK_X},
+    WindowsAndMessaging::{ShowWindow, SW_HIDE, SW_SHOW},
 };
 
 pub fn listen(content: &Webview, drag: &Webview) -> tauri::Result<()> {
@@ -48,19 +49,20 @@ pub fn listen(content: &Webview, drag: &Webview) -> tauri::Result<()> {
 }
 
 fn toggle(drag: &Webview) {
-    let target = drag.clone();
-    drag.with_webview(move |native| {
+    drag.with_webview(|native| unsafe {
+        let controller = native.controller();
         let mut visible = Default::default();
-        unsafe { native.controller().IsVisible(&mut visible) }.map_or_else(
-            |error| eprintln!("Cannot read drag area visibility: {error}"),
-            |()| {
-                visible
-                    .as_bool()
-                    .then(|| target.hide())
-                    .unwrap_or_else(|| target.show())
-                    .unwrap_or_else(|error| eprintln!("Cannot toggle drag area: {error}"));
-            },
-        );
+        controller
+            .IsVisible(&mut visible)
+            .and_then(|()| {
+                let mut host = Default::default();
+                controller.ParentWindow(&mut host)?;
+                let show = !visible.as_bool();
+                // Tauri show/hide would re-enter the lock held by with_webview.
+                let _ = ShowWindow(host, show.then_some(SW_SHOW).unwrap_or(SW_HIDE));
+                controller.SetIsVisible(show)
+            })
+            .unwrap_or_else(|error| eprintln!("Cannot toggle drag area: {error}"));
     })
     .unwrap_or_else(|error| eprintln!("Cannot access drag area: {error}"));
 }
