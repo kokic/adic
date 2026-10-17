@@ -1,0 +1,7 @@
+{
+  "identifier": "drag",
+  "webviews": ["drag"],
+  "permissions": [
+    "core:window:allow-start-dragging"
+  ]
+}
